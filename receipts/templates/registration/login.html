@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}Вход — Чек на удачу{% endblock %}
+
+{% block content %}
+<div class="page narrow">
+  <div class="card">
+    <h1 class="card-title">Вход</h1>
+    {% if form.errors %}
+      <div class="alert alert-error">Неверное имя пользователя или пароль.</div>
+    {% endif %}
+    <form method="post">
+      {% csrf_token %}
+      <div class="field">
+        <label for="{{ form.username.id_for_label }}">Имя пользователя</label>
+        {{ form.username }}
+      </div>
+      <div class="field">
+        <label for="{{ form.password.id_for_label }}">Пароль</label>
+        {{ form.password }}
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Войти</button>
+        <input type="hidden" name="next" value="{{ next }}">
+      </div>
+    </form>
+    <p class="auth-links">Ещё нет аккаунта? <a href="{% url 'signup' %}">Зарегистрируйтесь</a></p>
+  </div>
+</div>
+{% endblock %}

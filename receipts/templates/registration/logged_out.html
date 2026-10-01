@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block title %}Выход — Чек на удачу{% endblock %}
+
+{% block content %}
+<div class="page narrow">
+  <div class="card">
+    <h1 class="card-title">Вы вышли из аккаунта</h1>
+    <p>Спасибо, что участвуете в акции!</p>
+    <div class="form-actions">
+      <a href="{% url 'login' %}" class="btn btn-primary">Войти снова</a>
+      <a href="{% url 'signup' %}" class="btn btn-ghost">Регистрация</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

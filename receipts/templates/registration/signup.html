@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}Регистрация — Чек на удачу{% endblock %}
+
+{% block content %}
+<div class="page narrow">
+  <div class="card">
+    <h1 class="card-title">Регистрация</h1>
+    <form method="post" novalidate>
+      {% csrf_token %}
+      {% for field in form %}
+        <div class="field">
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+          {% if field.help_text %}<small class="hint">{{ field.help_text|safe }}</small>{% endif %}
+          {% for error in field.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+        </div>
+      {% endfor %}
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Создать аккаунт</button>
+      </div>
+    </form>
+    <p class="auth-links">Уже есть аккаунт? <a href="{% url 'login' %}">Войдите</a></p>
+  </div>
+</div>
+{% endblock %}
