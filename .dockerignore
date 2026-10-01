@@ -1,0 +1,13 @@
+__pycache__/
+*.py[codz]
+.venv/
+venv/
+.env
+.git/
+.gitignore
+media/
+staticfiles/
+db.sqlite3
+screenshots/
+task_data/
+research/

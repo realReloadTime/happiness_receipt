@@ -1,0 +1,47 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${DB_NAME:-happiness_receipt}
+      POSTGRES_USER: ${DB_USER:-happiness}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-happiness}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-happiness} -d ${DB_NAME:-happiness_receipt}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  web:
+    build: .
+    environment:
+      DEBUG: ${DEBUG:-1}
+      SECRET_KEY: ${SECRET_KEY:-django-insecure-change-me}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1}
+      CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS:-http://localhost:8000,http://127.0.0.1:8000}
+      DB_NAME: ${DB_NAME:-happiness_receipt}
+      DB_USER: ${DB_USER:-happiness}
+      DB_PASSWORD: ${DB_PASSWORD:-happiness}
+      DB_HOST: db
+      DB_PORT: ${DB_PORT:-5432}
+      PROMO_START_DATE: ${PROMO_START_DATE:-2026-10-01}
+      PROMO_END_DATE: ${PROMO_END_DATE:-2026-10-31}
+      PROMO_TIMEZONE: ${PROMO_TIMEZONE:-Asia/Novosibirsk}
+      LANGUAGE_CODE: ${LANGUAGE_CODE:-ru}
+      TIME_ZONE: ${TIME_ZONE:-UTC}
+      RECEIPT_PHOTO_MAX_MB: ${RECEIPT_PHOTO_MAX_MB:-10}
+      DJANGO_SUPERUSER_USERNAME: ${DJANGO_SUPERUSER_USERNAME:-admin}
+      DJANGO_SUPERUSER_PASSWORD: ${DJANGO_SUPERUSER_PASSWORD:-admin12345}
+      DJANGO_SUPERUSER_EMAIL: ${DJANGO_SUPERUSER_EMAIL:-admin@example.com}
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - media:/app/media
+
+volumes:
+  pgdata:
+  media:
