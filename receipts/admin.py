@@ -1,11 +1,11 @@
 import csv
+import io
 
 from django import forms
 from django.contrib import admin, messages
-from django.http import HttpResponse
+from django.http import StreamingHttpResponse
 from django.shortcuts import redirect
 from django.template.response import TemplateResponse
-from django.urls import path
 from django.utils.html import format_html
 
 from .models import Receipt
@@ -57,15 +57,23 @@ def reject_selected(modeladmin, request, queryset):
     )
 
 
-@admin.action(description="Выгрузить принятые чеки в CSV")
-def export_accepted_csv(modeladmin, request, queryset):
-    """Выгрузка принятых чеков в CSV (с BOM для корректного открытия в Excel)."""
-    queryset = queryset.filter(status=Receipt.Status.ACCEPTED)
-    response = HttpResponse(content_type="text/csv; charset=utf-8")
-    response["Content-Disposition"] = 'attachment; filename="accepted_receipts.csv"'
-    response.write("\ufeff")
+class _Echo:
+    """Псевдофайл для csv.writer, чтобы отдавать CSV потоком."""
 
-    writer = csv.writer(response)
+    def write(self, value):
+        return value
+
+
+def _csv_rows(queryset):
+    """Генератор строк CSV: BOM, заголовок и по одной строке на чек.
+
+    Буфер StringIO переиспользуется для каждой строки (seek/truncate),
+    поэтому память не растёт с размером выгрузки, а сам факт записи
+    не зависит от возвращаемого значения csv.writer.writerow().
+    """
+    yield "\ufeff"  # BOM для корректного открытия в Excel
+    buffer = io.StringIO()
+    writer = csv.writer(buffer)
     writer.writerow(
         [
             "Пользователь",
@@ -79,7 +87,10 @@ def export_accepted_csv(modeladmin, request, queryset):
             "Дата регистрации",
         ]
     )
+    yield buffer.getvalue()
     for receipt in queryset.select_related("user"):
+        buffer.seek(0)
+        buffer.truncate(0)
         writer.writerow(
             [
                 receipt.user.username,
@@ -93,6 +104,17 @@ def export_accepted_csv(modeladmin, request, queryset):
                 receipt.created_at.strftime("%d.%m.%Y %H:%M"),
             ]
         )
+        yield buffer.getvalue()
+
+
+@admin.action(description="Выгрузить принятые чеки в CSV")
+def export_accepted_csv(modeladmin, request, queryset):
+    """Потоковая выгрузка принятых чеков в CSV (BOM для Excel, без буферизации)."""
+    queryset = queryset.filter(status=Receipt.Status.ACCEPTED)
+    response = StreamingHttpResponse(
+        _csv_rows(queryset), content_type="text/csv; charset=utf-8"
+    )
+    response["Content-Disposition"] = 'attachment; filename="accepted_receipts.csv"'
     return response
 
 
