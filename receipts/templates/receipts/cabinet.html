@@ -87,6 +87,18 @@
     {% endif %}
   </div>
 </div>
+
+{% if won_receipt %}
+<div class="modal-overlay" id="win-modal" hidden>
+  <div class="modal">
+    <span class="modal-confetti" aria-hidden="true">🎉</span>
+    <h2>Вы победитель, поздравляем!</h2>
+    <p>Ваш чек от {{ won_receipt.purchased_at|promo_localtime }} на сумму {{ won_receipt.amount }}&nbsp;₽ выиграл в розыгрыше акции «Чек на удачу».</p>
+    <p class="modal-sub">Свяжитесь с организатором для получения приза.</p>
+    <button type="button" class="btn btn-primary btn-block" id="win-modal-close">Закрыть</button>
+  </div>
+</div>
+{% endif %}
 {% endblock %}
 
 {% block scripts %}

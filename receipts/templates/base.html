@@ -21,9 +21,13 @@
            class="nav-pill {% if request.resolver_match.url_name == 'cabinet' %}active{% endif %}">📄 Личный кабинет</a>
         <a href="{% url 'receipts:register_receipt' %}"
            class="nav-pill {% if request.resolver_match.url_name == 'register_receipt' %}active{% endif %}">🧾 Регистрация чека</a>
+        <a href="{% url 'receipts:rules' %}"
+           class="nav-pill {% if request.resolver_match.url_name == 'rules' %}active{% endif %}">📜 Правила</a>
       {% else %}
         <a href="{% url 'login' %}" class="nav-pill">Войти</a>
         <a href="{% url 'signup' %}" class="nav-pill">Регистрация</a>
+        <a href="{% url 'receipts:rules' %}"
+           class="nav-pill {% if request.resolver_match.url_name == 'rules' %}active{% endif %}">📜 Правила</a>
       {% endif %}
     </nav>
 

@@ -403,6 +403,49 @@ img { max-width: 100%; }
 .status-pending  { background: var(--color-warning-soft); color: var(--color-warning); }
 .status-accepted { background: var(--color-success-soft); color: var(--color-success); }
 .status-rejected { background: var(--color-error-soft);   color: var(--color-error); }
+.status-won      { background: var(--color-purple-soft);  color: var(--color-purple); }
+.status-lost     { background: #eef0f2;                    color: #6b7280; }
+
+/* ===== Модалка «Вы победитель» ============================================ */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(17, 24, 39, 0.5);
+}
+
+.modal {
+  width: 100%;
+  max-width: 440px;
+  background: var(--color-surface);
+  border-radius: 16px;
+  padding: 28px 24px;
+  text-align: center;
+  box-shadow: 0 20px 50px rgba(17, 24, 39, 0.25);
+}
+
+.modal-confetti { font-size: 48px; line-height: 1; }
+
+.modal h2 { margin: 10px 0 8px; font-size: 22px; color: var(--color-purple); }
+
+.modal p { margin: 0 0 6px; color: var(--color-text); }
+
+.modal .modal-sub { color: var(--color-text-muted); font-size: 14px; margin-bottom: 18px; }
+
+/* ===== Страница правил ==================================================== */
+.rules-block h2 { font-size: 16px; margin: 18px 0 8px; color: var(--color-primary); }
+
+.rules-block h2:first-child { margin-top: 0; }
+
+.rules-list { margin: 0 0 8px; padding-left: 20px; }
+
+.rules-list li { margin-bottom: 6px; }
+
+.rules-muted { color: var(--color-text-muted); }
 
 /* ===== Пагинация (нумерованная, по макету) ================================ */
 .pagination {

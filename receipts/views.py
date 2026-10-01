@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
@@ -97,4 +98,18 @@ def cabinet(request):
     receipts = request.user.receipts.all()
     paginator = Paginator(receipts, 10)
     page_obj = paginator.get_page(request.GET.get("page"))
-    return render(request, "receipts/cabinet.html", {"page_obj": page_obj})
+    won_receipt = request.user.receipts.filter(status=Receipt.Status.WON).first()
+    return render(
+        request,
+        "receipts/cabinet.html",
+        {"page_obj": page_obj, "won_receipt": won_receipt},
+    )
+
+
+def rules(request):
+    """Страница правил участия в акции."""
+    return render(
+        request,
+        "receipts/rules.html",
+        {"winners_count": settings.PROMO_WINNERS_COUNT},
+    )
