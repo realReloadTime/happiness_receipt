@@ -10,6 +10,15 @@
   var campaignEnd = form.dataset.campaignEnd || "";
   var photoMaxMb = parseFloat(form.dataset.photoMaxMb || "10");
   var cabinetUrl = form.dataset.cabinetUrl || "/";
+  var qrStatus = document.getElementById("qr-status");
+
+  function pad(n) { return n < 10 ? "0" + n : "" + n; }
+
+  function nowIso() {
+    var d = new Date();
+    return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) +
+      "T" + pad(d.getHours()) + ":" + pad(d.getMinutes());
+  }
 
   function setFieldError(name, message) {
     var field = form.querySelector('[data-field="' + name + '"]');
@@ -39,7 +48,7 @@
 
     // ФД: цифры, не более 10
     value = form.elements.fd.value.trim();
-    if (!value) errors.fd = "Заполните ФД.";
+    if (!value) errors.fd = "Заполните номер чека (ФД).";
     else if (!/^\d{1,10}$/.test(value)) errors.fd = "ФД должен содержать только цифры (до 10).";
 
     // ФП: цифры, не более 10
@@ -47,7 +56,7 @@
     if (!value) errors.fp = "Заполните ФП.";
     else if (!/^\d{1,10}$/.test(value)) errors.fp = "ФП должен содержать только цифры (до 10).";
 
-    // Дата и время покупки: формат YYYY-MM-DDTHH:MM + границы акции
+    // Дата и время покупки: формат YYYY-MM-DDTHH:MM + границы акции + «не в будущем»
     value = form.elements.purchased_at.value; // "YYYY-MM-DDTHH:MM"
     if (!value) {
       errors.purchased_at = "Укажите дату и время покупки.";
@@ -57,6 +66,8 @@
       errors.purchased_at = "Покупка раньше начала акции.";
     } else if (campaignEnd && value > campaignEnd) {
       errors.purchased_at = "Покупка позже окончания акции.";
+    } else if (value > nowIso()) {
+      errors.purchased_at = "Дата покупки не может быть в будущем.";
     }
 
     // Сумма: число >= 1000
@@ -87,7 +98,14 @@
     messageBox.innerHTML = html;
   }
 
-  /* --- Бонус: автозаполнение из строки QR-кода ------------------------------ */
+  function showQrStatus(ok, text) {
+    if (!qrStatus) return;
+    qrStatus.hidden = false;
+    qrStatus.className = "qr-status " + (ok ? "qr-ok" : "qr-fail");
+    qrStatus.textContent = text;
+  }
+
+  /* --- Заполнение полей из строки QR-кода ------------------------------------ */
   function formatDateFromQr(t) {
     // t = YYYYMMDDTHHMM → YYYY-MM-DDTHH:MM
     if (!/^\d{8}T\d{4}$/.test(t || "")) return null;
@@ -97,10 +115,9 @@
     );
   }
 
-  var qrInput = form.elements.qr_line;
-  qrInput.addEventListener("input", function () {
+  function applyQrLine(line) {
     var params = {};
-    (this.value || "").trim().split("&").forEach(function (part) {
+    (line || "").trim().split("&").forEach(function (part) {
       var idx = part.indexOf("=");
       if (idx > 0) params[part.slice(0, idx).trim()] = part.slice(idx + 1).trim();
     });
@@ -121,6 +138,54 @@
     if (dt && !form.elements.purchased_at.value) {
       form.elements.purchased_at.value = dt;
     }
+  }
+
+  // Вставка строки из QR-кода вручную
+  var qrInput = form.elements.qr_line;
+  qrInput.addEventListener("input", function () {
+    applyQrLine(this.value);
+  });
+
+  // Бонус: распознавание QR-кода прямо из фото чека (jsQR, целиком в браузере)
+  var photoInput = form.elements.photo;
+  photoInput.addEventListener("change", function () {
+    if (!this.files || !this.files.length) return;
+    var file = this.files[0];
+    if (file.type.indexOf("image/") !== 0) {
+      showQrStatus(false, "Это не изображение. Выберите фото чека.");
+      return;
+    }
+    if (typeof jsQR === "undefined") {
+      showQrStatus(false, "Библиотека распознавания не загрузилась. Вставьте строку из QR-кода вручную.");
+      return;
+    }
+    var reader = new FileReader();
+    reader.onload = function () {
+      var img = new Image();
+      img.onload = function () {
+        try {
+          var canvas = document.createElement("canvas");
+          // Уменьшаем слишком большие фото до 1000px по большей стороне — быстрее распознавание
+          var scale = Math.min(1, 1000 / Math.max(img.width, img.height));
+          canvas.width = Math.round(img.width * scale);
+          canvas.height = Math.round(img.height * scale);
+          var ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          var code = jsQR(imageData.data, imageData.width, imageData.height);
+          if (code && code.data) {
+            applyQrLine(code.data);
+            showQrStatus(true, "QR-код распознан — реквизиты чека заполнены автоматически.");
+          } else {
+            showQrStatus(false, "QR-код на фото не найден. Заполните поля вручную или вставьте строку.");
+          }
+        } catch (e) {
+          showQrStatus(false, "Не удалось прочитать фото. Заполните поля вручную или вставьте строку.");
+        }
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
   });
 
   /* --- Отправка через fetch, ответ сервера — на странице -------------------- */
@@ -174,6 +239,7 @@
             "</div>"
           );
           form.reset();
+          if (qrStatus) qrStatus.hidden = true;
         } else {
           var data = result.data || {};
           Object.keys(data.errors || {}).forEach(function (name) {
@@ -191,7 +257,7 @@
       })
       .finally(function () {
         submitBtn.disabled = false;
-        submitBtn.textContent = "Отправить на проверку";
+        submitBtn.textContent = "Загрузить";
       });
   });
 })();

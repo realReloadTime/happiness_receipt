@@ -59,3 +59,13 @@ def campaign_period_display() -> tuple[str, str]:
         campaign_start().astimezone(promo_zone()).strftime(fmt),
         campaign_end().astimezone(promo_zone()).strftime(fmt),
     )
+
+
+def campaign_start_iso() -> str:
+    """Начало акции в формате YYYY-MM-DDTHH:MM (для атрибутов min/max у поля даты)."""
+    return campaign_start().astimezone(promo_zone()).strftime("%Y-%m-%dT%H:%M")
+
+
+def campaign_end_iso() -> str:
+    """Конец акции в формате YYYY-MM-DDTHH:MM (для атрибута max у поля даты)."""
+    return campaign_end().astimezone(promo_zone()).strftime("%Y-%m-%dT%H:%M")

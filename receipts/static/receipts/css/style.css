@@ -281,6 +281,41 @@ img { max-width: 100%; }
   color: var(--color-error);
 }
 
+/* Пустые контейнеры ошибок не должны быть видны до валидации */
+.field-error:empty { display: none; }
+
+/* ===== Секция «У меня есть фото или QR-код чека» =========================== */
+.qr-section {
+  margin-bottom: 20px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  background: #fafbff;
+}
+
+.qr-section summary {
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--color-primary);
+  user-select: none;
+}
+
+.qr-section summary:hover { color: var(--color-primary-dark); }
+
+.qr-hint { margin: 8px 0 14px; font-size: 13px; }
+
+.qr-status {
+  margin-top: 6px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.qr-ok   { background: var(--color-success-soft); color: var(--color-success); }
+.qr-fail { background: var(--color-warning-soft); color: var(--color-warning); }
+
 .auth-links { margin: 16px 0 0; color: var(--color-text-muted); font-size: 14px; }
 
 .auth-links a { color: var(--color-primary); }

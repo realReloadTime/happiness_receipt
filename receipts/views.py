@@ -1,29 +1,28 @@
 from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.forms import UserCreationForm
 from django.core.paginator import Paginator
 from django.db import IntegrityError
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
 
 from .campaign import campaign_period_display
-from .forms import DUPLICATE_MESSAGE, ReceiptForm
+from .forms import DUPLICATE_MESSAGE, ReceiptForm, RegistrationForm
 from .models import Receipt
 
 
 def signup(request):
-    """Регистрация нового участника акции (стандартная форма UserCreationForm)."""
+    """Регистрация нового участника акции: стандартная форма + обязательный e-mail."""
     if request.user.is_authenticated:
         return redirect("receipts:cabinet")
     if request.method == "POST":
-        form = UserCreationForm(request.POST)
+        form = RegistrationForm(request.POST)
         if form.is_valid():
             user = form.save()
             login(request, user)
             return redirect("receipts:cabinet")
     else:
-        form = UserCreationForm()
+        form = RegistrationForm()
     return render(request, "registration/signup.html", {"form": form})
 
 

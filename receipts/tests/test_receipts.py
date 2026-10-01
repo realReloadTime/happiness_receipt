@@ -10,7 +10,7 @@ from django.urls import reverse
 
 from receipts.admin import ReceiptAdminForm
 from receipts.campaign import make_aware_in_promo_tz
-from receipts.forms import DUPLICATE_MESSAGE, ReceiptForm
+from receipts.forms import DUPLICATE_MESSAGE, ReceiptForm, RegistrationForm
 from receipts.models import Receipt
 from receipts.qr import QRParsingError, parse_qr_line
 
@@ -334,6 +334,42 @@ class ReceiptPageAndApiTests(TestCase):
         self.assertFalse(payload["ok"])
         self.assertIn("amount", payload["errors"])
         self.assertEqual(Receipt.objects.count(), 0)
+
+
+class RegistrationTests(TestCase):
+    """Регистрация участника: обязательный корректный и уникальный e-mail."""
+
+    def data(self, **overrides):
+        payload = {
+            "username": "newuser",
+            "email": "user@example.com",
+            "password1": "secret-pass-123",
+            "password2": "secret-pass-123",
+        }
+        payload.update(overrides)
+        return payload
+
+    def test_registration_rejects_bad_email(self):
+        form = RegistrationForm(data=self.data(email="not-an-email"))
+        self.assertFalse(form.is_valid())
+        self.assertIn("email", form.errors)
+
+    def test_registration_rejects_duplicate_email_case_insensitive(self):
+        User.objects.create_user("existing", email="same@example.com", password="pass")
+        form = RegistrationForm(data=self.data(email="SAME@example.com"))
+        self.assertFalse(form.is_valid())
+        self.assertIn("email", form.errors)
+
+    def test_registration_success_saves_lowercased_email(self):
+        form = RegistrationForm(data=self.data(email="User@Example.COM"))
+        self.assertTrue(form.is_valid(), form.errors)
+        user = form.save()
+        self.assertEqual(user.email, "user@example.com")
+
+    def test_signup_page_renders_email_field(self):
+        response = self.client.get(reverse("signup"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'type="email"')
 
 
 class AdminTests(TestCase):

@@ -8,7 +8,10 @@
   <div class="card">
     <div class="card-head">
       <h1 class="card-title">Регистрация чека</h1>
-      <p class="card-sub">Введите необходимые данные с чека. Период акции: с {{ campaign_start }} по {{ campaign_end }} (время акции).</p>
+      <p class="card-sub">
+        Введите данные с чека. Период акции: с {{ campaign_start }} по {{ campaign_end }} (время акции).
+        Минимальная сумма чека — 1000&nbsp;₽.
+      </p>
     </div>
 
     <form id="receipt-form"
@@ -21,15 +24,31 @@
           novalidate>
       {% csrf_token %}
 
-      <div class="form-section">
+      {# --- Быстрый путь: фото или строка из QR-кода --------------------------- #}
+      <details class="qr-section" open>
+        <summary>У меня есть фото или QR-код чека</summary>
+        <p class="card-sub qr-hint">
+          Приложите фото чека — QR-код распознается автоматически, а реквизиты подставятся сами.
+          Если под рукой только текст из чека, вставьте его в поле ниже.
+        </p>
+
+        <div class="field" data-field="photo">
+          <label for="{{ form.photo.id_for_label }}">{{ form.photo.label }}</label>
+          {{ form.photo }}
+          <small class="hint">JPG, PNG или WebP до {{ photo_max_mb }}&nbsp;МБ (необязательно)</small>
+          <div id="qr-status" class="qr-status" hidden></div>
+          <div class="field-error" data-error-for="photo"></div>
+        </div>
+
         <div class="field" data-field="qr_line">
           <label for="{{ form.qr_line.id_for_label }}">{{ form.qr_line.label }}</label>
           {{ form.qr_line }}
-          <small class="hint">Бонус: вставьте строку из QR-кода чека — реквизиты заполнятся автоматически.</small>
+          <small class="hint">Строка вида t=20261015T1200&s=1890.00&fn=...&i=...&fp=...</small>
           <div class="field-error" data-error-for="qr_line"></div>
         </div>
-      </div>
+      </details>
 
+      {# --- Ручной ввод: поля в порядке макета ----------------------------------- #}
       <div class="form-section">
         <div class="field" data-field="fn">
           <label for="{{ form.fn.id_for_label }}">{{ form.fn.label }}</label>
@@ -58,14 +77,8 @@
         <div class="field" data-field="amount">
           <label for="{{ form.amount.id_for_label }}">{{ form.amount.label }}</label>
           {{ form.amount }}
-          <small class="hint">Минимальная сумма чека — 1000&nbsp;₽</small>
+          <small class="hint">Не менее 1000&nbsp;₽</small>
           <div class="field-error" data-error-for="amount"></div>
-        </div>
-        <div class="field" data-field="photo">
-          <label for="{{ form.photo.id_for_label }}">{{ form.photo.label }}</label>
-          {{ form.photo }}
-          <small class="hint">Бонус: JPG, PNG или WebP до {{ photo_max_mb }}&nbsp;МБ (необязательно)</small>
-          <div class="field-error" data-error-for="photo"></div>
         </div>
       </div>
 
@@ -78,5 +91,6 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="{% static 'receipts/js/vendor/jsqr.min.js' %}"></script>
 <script src="{% static 'receipts/js/register.js' %}"></script>
 {% endblock %}

@@ -1,17 +1,44 @@
 import decimal
 
 from django import forms
+from django.contrib.auth import get_user_model
+from django.contrib.auth.forms import UserCreationForm
 from django.http import QueryDict
 from django.utils import timezone
 
 from .campaign import (
+    campaign_end_iso,
     campaign_period_display,
+    campaign_start_iso,
     is_in_future,
     is_within_campaign,
     make_aware_in_promo_tz,
 )
 from .models import Receipt
 from .qr import QRParsingError, parse_qr_line
+
+DUPLICATE_EMAIL_MESSAGE = "Пользователь с такой почтой уже зарегистрирован."
+
+
+class RegistrationForm(UserCreationForm):
+    """Регистрация участника акции: обязательный корректный и уникальный e-mail."""
+
+    email = forms.EmailField(
+        label="Электронная почта",
+        required=True,
+        widget=forms.EmailInput(attrs={"autocomplete": "email", "placeholder": "name@example.com"}),
+        error_messages={"invalid": "Введите корректный e-mail."},
+    )
+
+    class Meta:
+        model = get_user_model()
+        fields = ("username", "email")
+
+    def clean_email(self):
+        email = self.cleaned_data["email"].strip().lower()
+        if get_user_model().objects.filter(email__iexact=email).exists():
+            raise forms.ValidationError(DUPLICATE_EMAIL_MESSAGE)
+        return email
 
 DUPLICATE_MESSAGE = (
     "Этот чек уже зарегистрирован. Повторная регистрация того же чека невозможна."
@@ -91,6 +118,9 @@ class ReceiptForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        # Границы выбора даты в браузере: период акции из настроек.
+        self.fields["purchased_at"].widget.attrs["min"] = campaign_start_iso()
+        self.fields["purchased_at"].widget.attrs["max"] = campaign_end_iso()
         # Бонус: если пользователь вставил строку из QR-кода, заполняем
         # недостающие поля ДО валидации полей (иначе появятся ошибки «заполните поле»).
         if self.is_bound:
