@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Регистрация чека — Чек на удачу{% endblock %}
+
+{% block content %}
+<div class="page narrow">
+  <div class="card">
+    <div class="card-head">
+      <h1 class="card-title">Регистрация чека</h1>
+      <p class="card-sub">Введите необходимые данные с чека. Период акции: с {{ campaign_start }} по {{ campaign_end }} (время акции).</p>
+    </div>
+
+    <form id="receipt-form"
+          method="post"
+          enctype="multipart/form-data"
+          data-campaign-start="{{ campaign_start_iso }}"
+          data-campaign-end="{{ campaign_end_iso }}"
+          data-photo-max-mb="{{ photo_max_mb }}"
+          data-cabinet-url="{% url 'receipts:cabinet' %}"
+          novalidate>
+      {% csrf_token %}
+
+      <div class="form-section">
+        <div class="field" data-field="qr_line">
+          <label for="{{ form.qr_line.id_for_label }}">{{ form.qr_line.label }}</label>
+          {{ form.qr_line }}
+          <small class="hint">Бонус: вставьте строку из QR-кода чека — реквизиты заполнятся автоматически.</small>
+          <div class="field-error" data-error-for="qr_line"></div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <div class="field" data-field="fn">
+          <label for="{{ form.fn.id_for_label }}">{{ form.fn.label }}</label>
+          {{ form.fn }}
+          <small class="hint">16 цифр с кассового чека</small>
+          <div class="field-error" data-error-for="fn"></div>
+        </div>
+        <div class="field" data-field="fd">
+          <label for="{{ form.fd.id_for_label }}">{{ form.fd.label }}</label>
+          {{ form.fd }}
+          <small class="hint">Номер фискального документа</small>
+          <div class="field-error" data-error-for="fd"></div>
+        </div>
+        <div class="field" data-field="fp">
+          <label for="{{ form.fp.id_for_label }}">{{ form.fp.label }}</label>
+          {{ form.fp }}
+          <small class="hint">Фискальный признак</small>
+          <div class="field-error" data-error-for="fp"></div>
+        </div>
+        <div class="field" data-field="purchased_at">
+          <label for="{{ form.purchased_at.id_for_label }}">{{ form.purchased_at.label }}</label>
+          {{ form.purchased_at }}
+          <small class="hint">Формат: дд.мм.гггг чч:мм (время акции)</small>
+          <div class="field-error" data-error-for="purchased_at"></div>
+        </div>
+        <div class="field" data-field="amount">
+          <label for="{{ form.amount.id_for_label }}">{{ form.amount.label }}</label>
+          {{ form.amount }}
+          <small class="hint">Минимальная сумма чека — 1000&nbsp;₽</small>
+          <div class="field-error" data-error-for="amount"></div>
+        </div>
+        <div class="field" data-field="photo">
+          <label for="{{ form.photo.id_for_label }}">{{ form.photo.label }}</label>
+          {{ form.photo }}
+          <small class="hint">Бонус: JPG, PNG или WebP до {{ photo_max_mb }}&nbsp;МБ (необязательно)</small>
+          <div class="field-error" data-error-for="photo"></div>
+        </div>
+      </div>
+
+      <div id="form-message" class="alert" hidden></div>
+
+      <button type="submit" class="btn btn-primary btn-block" id="submit-btn">Загрузить</button>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'receipts/js/register.js' %}"></script>
+{% endblock %}

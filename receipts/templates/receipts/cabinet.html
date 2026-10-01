@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% load static %}
+{% load promo_filters %}
+
+{% block title %}Личный кабинет — Чек на удачу{% endblock %}
+
+{% block content %}
+<div class="page">
+  <div class="card">
+    <div class="card-head">
+      <h1 class="card-title">История чеков</h1>
+      <span class="count-badge">Чеков внесено: <b>{{ page_obj.paginator.count }}</b> шт.</span>
+    </div>
+
+    {% if page_obj.object_list %}
+      <div class="table-wrap">
+        <table class="receipts-table" id="receipts-table">
+          <thead>
+            <tr>
+              <th class="col-icon" aria-hidden="true"></th>
+              <th>Дата покупки</th>
+              <th>Статус</th>
+              <th>Сумма чека</th>
+              <th>Дата регистрации</th>
+              <th>Информация</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for receipt in page_obj %}
+            <tr data-receipt-id="{{ receipt.id }}" data-status="{{ receipt.status }}">
+              <td class="col-icon" aria-hidden="true"><span class="qr-icon">▦</span></td>
+              <td data-label="Дата покупки">{{ receipt.purchased_at|promo_localtime }}</td>
+              <td data-label="Статус">
+                <span class="status-badge status-{{ receipt.status }}">{{ receipt.get_status_display }}</span>
+              </td>
+              <td data-label="Сумма чека">{{ receipt.amount }}&nbsp;₽</td>
+              <td data-label="Дата регистрации">{{ receipt.created_at|promo_localtime }}</td>
+              <td data-label="Информация" class="reason-cell">
+                {% if receipt.status == 'rejected' %}
+                  <span class="reason-text" title="{{ receipt.rejection_reason }}">{{ receipt.rejection_reason|default:"Чек отклонён" }}</span>
+                {% else %}
+                  —
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      {% if page_obj.has_other_pages %}
+      <nav class="pagination" aria-label="Пагинация">
+        {% if page_obj.has_previous %}
+          <a href="?page={{ page_obj.previous_page_number }}" class="page-link" aria-label="Назад">‹</a>
+        {% endif %}
+        {% for num in page_obj.paginator.page_range %}
+          {% if num == page_obj.number %}
+            <span class="page-link active">{{ num }}</span>
+          {% elif num > page_obj.number|add:-3 and num < page_obj.number|add:3 %}
+            <a href="?page={{ num }}" class="page-link">{{ num }}</a>
+          {% elif num == 1 or num == page_obj.paginator.num_pages %}
+            <a href="?page={{ num }}" class="page-link">{{ num }}</a>
+          {% elif num == page_obj.number|add:-3 or num == page_obj.number|add:3 %}
+            <span class="page-ellipsis">…</span>
+          {% endif %}
+        {% endfor %}
+        {% if page_obj.has_next %}
+          <a href="?page={{ page_obj.next_page_number }}" class="page-link" aria-label="Вперёд">›</a>
+        {% endif %}
+      </nav>
+      {% endif %}
+
+      <div class="card-foot">
+        <div class="info-banner">
+          <span class="info-icon" aria-hidden="true">i</span>
+          Иногда проверка вашего чека может занять до 5 рабочих дней.
+        </div>
+        <a href="{% url 'receipts:register_receipt' %}" class="btn btn-primary">+ Зарегистрировать чек</a>
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <div class="empty-illustration" aria-hidden="true">🧾<span class="empty-question">???</span></div>
+        <h2>Здесь будет история ваших чеков</h2>
+        <p>Вы не добавили еще ни одного чека</p>
+        <a href="{% url 'receipts:register_receipt' %}" class="btn btn-primary">Зарегистрировать чек</a>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'receipts/js/cabinet.js' %}"></script>
+{% endblock %}

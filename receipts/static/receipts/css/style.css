@@ -1,0 +1,528 @@
+/* ===== «Чек на удачу» — стили =============================================
+   Палитра и структура — по описанию макета Figma (research/figma-lk-cheki-opisanie.md):
+   blurple CTA, светлый фон, белые карточки, один гротескный шрифт. */
+:root {
+  --color-primary: #4f56e8;          /* primary CTA (blurple) */
+  --color-primary-dark: #3f45c9;
+  --color-primary-soft: #eef0fe;
+  --color-text: #111827;
+  --color-text-muted: #6b7280;
+  --color-bg: #f3f4f6;
+  --color-surface: #ffffff;
+  --color-border: #e5e7eb;
+  --color-success: #16a34a;
+  --color-success-soft: #e9f9ef;
+  --color-error: #dc2626;
+  --color-error-soft: #fdecec;
+  --color-warning: #b45309;
+  --color-warning-soft: #fdf3e3;
+  --color-purple: #7c3aed;
+  --color-purple-soft: #f3ecfd;
+  --radius: 12px;
+  --shadow: 0 1px 3px rgba(17, 24, 39, 0.07);
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          "Helvetica Neue", Arial, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body { margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--color-text);
+  background: var(--color-bg);
+  overflow-x: hidden; /* защита от горизонтального скролла на мобильных */
+}
+
+img { max-width: 100%; }
+
+.container {
+  width: 100%;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* ===== Шапка (по макету) ================================================== */
+.site-header {
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.logo-placeholder {
+  display: inline-block;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: #e2e5ec; /* серый плейсхолдер логотипа из макета */
+}
+
+.back-link {
+  color: var(--color-text-muted);
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.back-link:hover { color: var(--color-primary); }
+
+.header-nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.nav-pill {
+  padding: 7px 14px;
+  border-radius: 999px;
+  color: var(--color-text);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.nav-pill:hover { background: var(--color-bg); color: var(--color-primary); }
+
+.nav-pill.active {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.nav-bell { font-size: 18px; line-height: 1; }
+
+.user-block {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  font-weight: 700;
+}
+
+.user-info { display: flex; flex-direction: column; line-height: 1.2; }
+
+.user-name { font-weight: 600; font-size: 14px; }
+
+.user-email { font-size: 12px; color: var(--color-text-muted); }
+
+.inline-form { display: inline; margin: 0; }
+
+/* ===== Кнопки ============================================================== */
+.btn {
+  display: inline-block;
+  padding: 10px 18px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  font: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  text-align: center;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.btn-primary {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.btn-primary:hover:not(:disabled) { background: var(--color-primary-dark); }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--color-text);
+  border-color: var(--color-border);
+}
+
+.btn-ghost:hover { border-color: var(--color-primary); color: var(--color-primary); }
+
+.btn-sm { padding: 6px 12px; font-size: 14px; }
+
+.btn-block { width: 100%; }
+
+/* ===== Основной контейнер страниц ========================================= */
+.main {
+  padding-top: 28px;
+  padding-bottom: 48px;
+  min-height: calc(100vh - 140px);
+}
+
+.page.narrow { max-width: 560px; margin: 0 auto; }
+
+/* ===== Карточка контента ================================================== */
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  padding: 28px;
+  margin-bottom: 20px;
+}
+
+.card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.card-title { margin: 0; font-size: 24px; font-weight: 800; }
+
+.card-sub { margin: 6px 0 0; color: var(--color-text-muted); font-size: 14px; }
+
+.count-badge {
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.count-badge b { color: var(--color-primary); }
+
+.form-section { margin-bottom: 20px; }
+
+/* ===== Формы =============================================================== */
+.field { margin-bottom: 16px; }
+
+.field label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.field input[type="text"],
+.field input[type="number"],
+.field input[type="datetime-local"],
+.field input[type="password"],
+.field input[type="email"],
+.field input[type="file"] {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  font: inherit;
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.field input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-soft);
+}
+
+.field .hint {
+  display: block;
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+/* Состояние ошибки: красный бордер + текст рядом с полем (по макету) */
+.field.invalid input {
+  border-color: var(--color-error);
+  color: var(--color-error);
+}
+
+.field.invalid input:focus {
+  box-shadow: 0 0 0 3px var(--color-error-soft);
+}
+
+.field-error {
+  margin-top: 6px;
+  padding: 6px 10px;
+  border: 1px solid var(--color-error);
+  border-radius: 8px;
+  background: var(--color-error-soft);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-error);
+}
+
+.auth-links { margin: 16px 0 0; color: var(--color-text-muted); font-size: 14px; }
+
+.auth-links a { color: var(--color-primary); }
+
+/* ===== Сообщения и карточка успеха ======================================== */
+.alert {
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  font-weight: 500;
+}
+
+.alert-success { background: var(--color-success-soft); color: var(--color-success); }
+.alert-error   { background: var(--color-error-soft);   color: var(--color-error); }
+.alert-info    { background: var(--color-warning-soft); color: var(--color-warning); }
+
+.success-card {
+  text-align: center;
+  padding: 8px 0 4px;
+}
+
+.success-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  background: var(--color-success);
+  color: #fff;
+  font-size: 26px;
+  margin-bottom: 10px;
+}
+
+.success-card b { display: block; font-size: 18px; }
+
+.success-card p { color: var(--color-text-muted); margin: 6px 0 14px; font-size: 14px; }
+
+/* ===== Таблица чеков ====================================================== */
+.table-wrap {
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+.receipts-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.receipts-table th,
+.receipts-table td {
+  padding: 12px 14px;
+  text-align: left;
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: middle;
+}
+
+.receipts-table th {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+}
+
+.receipts-table tbody tr:last-child td { border-bottom: none; }
+
+.receipts-table tbody tr:hover { background: #fafafe; }
+
+.col-icon { width: 44px; }
+
+.qr-icon { color: var(--color-text-muted); font-size: 18px; }
+
+.reason-text { font-size: 14px; color: var(--color-error); }
+
+/* Статусы: жёлтый (обработка), зелёный (принят), красный (отклонён) */
+.status-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.status-pending  { background: var(--color-warning-soft); color: var(--color-warning); }
+.status-accepted { background: var(--color-success-soft); color: var(--color-success); }
+.status-rejected { background: var(--color-error-soft);   color: var(--color-error); }
+
+/* ===== Пагинация (нумерованная, по макету) ================================ */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin: 20px 0;
+}
+
+.page-link {
+  min-width: 36px;
+  height: 36px;
+  padding: 0 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.page-link:hover { border-color: var(--color-primary); color: var(--color-primary); }
+
+.page-link.active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
+}
+
+.page-ellipsis { color: var(--color-text-muted); }
+
+/* ===== Низ карточки: баннер + CTA ========================================= */
+.card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 20px;
+}
+
+.info-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--color-primary-soft);
+  color: var(--color-text);
+  font-size: 14px;
+}
+
+.info-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+/* ===== Пустое состояние =================================================== */
+.empty-state {
+  text-align: center;
+  padding: 40px 20px 24px;
+}
+
+.empty-illustration {
+  font-size: 56px;
+  line-height: 1;
+  margin-bottom: 12px;
+}
+
+.empty-question {
+  color: var(--color-primary);
+  font-size: 22px;
+  vertical-align: super;
+  margin-left: 4px;
+}
+
+.empty-state h2 { margin: 0 0 6px; font-size: 20px; }
+
+.empty-state p { margin: 0 0 18px; color: var(--color-text-muted); }
+
+/* ===== Подвал ============================================================= */
+.site-footer {
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface);
+  padding: 16px 0;
+  text-align: center;
+}
+
+.site-footer p { margin: 0; font-size: 14px; color: var(--color-text-muted); }
+
+/* ===== Адаптив: 375px и меньше (без горизонтального скролла) ============= */
+@media (max-width: 640px) {
+  .container { padding: 0 14px; }
+
+  .card { padding: 20px 16px; border-radius: 12px; }
+
+  .card-head { flex-direction: column; align-items: flex-start; }
+
+  .header-inner { flex-direction: column; align-items: stretch; gap: 8px; }
+
+  .header-nav { justify-content: flex-start; }
+
+  .user-email { display: none; }
+
+  .card-foot { flex-direction: column; align-items: stretch; }
+
+  .card-foot .btn { width: 100%; }
+
+  /* Таблица превращается в карточки — без горизонтального скролла */
+  .receipts-table, .receipts-table tbody, .receipts-table tr, .receipts-table td {
+    display: block;
+  }
+
+  .receipts-table thead { display: none; }
+
+  .receipts-table tr {
+    margin: 0 0 12px;
+    padding: 10px 4px;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .receipts-table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    padding: 6px 0;
+    border: none;
+  }
+
+  .receipts-table td::before {
+    content: attr(data-label);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  .receipts-table .col-icon { display: none; }
+
+  .pagination { justify-content: center; }
+}
