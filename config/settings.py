@@ -137,6 +137,8 @@ LOGOUT_REDIRECT_URL = "login"
 PROMO_START_DATE = os.getenv("PROMO_START_DATE", "2026-10-01")
 PROMO_END_DATE = os.getenv("PROMO_END_DATE", "2026-10-31")
 PROMO_TIMEZONE = os.getenv("PROMO_TIMEZONE", "Europe/Moscow")
+# Количество победителей розыгрыша (выбираются автоматически из принятых чеков)
+PROMO_WINNERS_COUNT = int(os.getenv("PROMO_WINNERS_COUNT", "3"))
 
 # Максимальный размер фото чека (МБ) — бонусная фича
 RECEIPT_PHOTO_MAX_MB = float(os.getenv("RECEIPT_PHOTO_MAX_MB", "10"))

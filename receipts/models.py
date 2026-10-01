@@ -26,6 +26,8 @@ class Receipt(models.Model):
         PENDING = "pending", "На проверке"
         ACCEPTED = "accepted", "Принят"
         REJECTED = "rejected", "Отклонён"
+        WON = "won", "Выиграл"
+        LOST = "lost", "Не повезло"
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -63,12 +65,12 @@ class Receipt(models.Model):
         verbose_name_plural = "чеки"
         constraints = [
             # Частичный уникальный индекс: один и тот же чек нельзя зарегистрировать
-            # дважды, пока он «живой» (на проверке или принят). Отклонённый чек
-            # можно подать заново — решение описано в README.
+            # дважды, пока он «живой» (на проверке, принят, участвует в розыгрыше).
+            # Отклонённый чек можно подать заново — решение описано в README.
             models.UniqueConstraint(
                 fields=["fn", "fd", "fp"],
-                # Строковые значения статусов (см. Status выше): "pending", "accepted".
-                condition=models.Q(status__in=["pending", "accepted"]),
+                # Строковые значения статусов (см. Status выше).
+                condition=models.Q(status__in=["pending", "accepted", "won", "lost"]),
                 name="unique_active_receipt",
             )
         ]
