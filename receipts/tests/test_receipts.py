@@ -413,6 +413,70 @@ class AdminTests(TestCase):
         self.assertEqual(form.cleaned_data["rejection_reason"], "")
 
     @override_settings(**CAMPAIGN)
+    def test_admin_bulk_accept(self):
+        r1 = Receipt.objects.create(
+            user=self.buyer, purchased_at=dt(2026, 10, 15), amount="1500.00",
+            fn="9288000100110003", fd="3", fp="33",
+        )
+        r2 = Receipt.objects.create(
+            user=self.buyer, purchased_at=dt(2026, 10, 16), amount="1200.00",
+            fn="9288000100110004", fd="4", fp="44",
+        )
+        self.client.force_login(self.moderator)
+        response = self.client.post(
+            reverse("admin:receipts_receipt_changelist"),
+            {"action": "accept_selected", "_selected_action": [r1.pk, r2.pk]},
+        )
+        self.assertEqual(response.status_code, 302)
+        r1.refresh_from_db()
+        r2.refresh_from_db()
+        self.assertEqual(r1.status, Receipt.Status.ACCEPTED)
+        self.assertEqual(r2.status, Receipt.Status.ACCEPTED)
+
+    @override_settings(**CAMPAIGN)
+    def test_admin_bulk_reject_shows_reason_form_and_applies(self):
+        receipt = Receipt.objects.create(
+            user=self.buyer, purchased_at=dt(2026, 10, 15), amount="1500.00",
+            fn="9288000100110005", fd="5", fp="55",
+        )
+        self.client.force_login(self.moderator)
+        changelist = reverse("admin:receipts_receipt_changelist")
+
+        # Шаг 1: промежуточная страница запрашивает причину
+        resp = self.client.post(
+            changelist, {"action": "reject_selected", "_selected_action": [receipt.pk]}
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "Причина отказа")
+
+        # Шаг 2: применяем с причиной
+        resp = self.client.post(
+            changelist,
+            {"action": "reject_selected", "_selected_action": [receipt.pk],
+             "apply": "1", "rejection_reason": "Магазин не участвует в акции"},
+        )
+        self.assertEqual(resp.status_code, 302)
+        receipt.refresh_from_db()
+        self.assertEqual(receipt.status, Receipt.Status.REJECTED)
+        self.assertEqual(receipt.rejection_reason, "Магазин не участвует в акции")
+
+    @override_settings(**CAMPAIGN)
+    def test_admin_bulk_reject_requires_reason(self):
+        receipt = Receipt.objects.create(
+            user=self.buyer, purchased_at=dt(2026, 10, 15), amount="1500.00",
+            fn="9288000100110006", fd="6", fp="66",
+        )
+        self.client.force_login(self.moderator)
+        resp = self.client.post(
+            reverse("admin:receipts_receipt_changelist"),
+            {"action": "reject_selected", "_selected_action": [receipt.pk],
+             "apply": "1", "rejection_reason": ""},
+        )
+        self.assertEqual(resp.status_code, 302)
+        receipt.refresh_from_db()
+        self.assertEqual(receipt.status, Receipt.Status.PENDING)
+
+    @override_settings(**CAMPAIGN)
     def test_csv_export_contains_only_accepted(self):
         accepted = Receipt.objects.create(
             user=self.buyer, purchased_at=dt(2026, 10, 15), amount="1500.00",

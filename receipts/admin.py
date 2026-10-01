@@ -1,8 +1,11 @@
 import csv
 
 from django import forms
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.http import HttpResponse
+from django.shortcuts import redirect
+from django.template.response import TemplateResponse
+from django.urls import path
 from django.utils.html import format_html
 
 from .models import Receipt
@@ -22,6 +25,36 @@ class ReceiptAdminForm(forms.ModelForm):
         if status != Receipt.Status.REJECTED and reason:
             cleaned["rejection_reason"] = ""
         return cleaned
+
+
+@admin.action(description="Принять выбранные чеки")
+def accept_selected(modeladmin, request, queryset):
+    """Быстрое подтверждение выбранных чеков («на проверке» → «принят»)."""
+    updated = queryset.filter(status=Receipt.Status.PENDING).update(
+        status=Receipt.Status.ACCEPTED, rejection_reason=""
+    )
+    messages.success(request, f"Принято чеков: {updated}.")
+
+
+@admin.action(description="Отклонить выбранные чеки (с причиной)")
+def reject_selected(modeladmin, request, queryset):
+    """Отклонение выбранных чеков: сначала запрашиваем причину, затем применяем."""
+    if "apply" in request.POST:
+        reason = request.POST.get("rejection_reason", "").strip()
+        if not reason:
+            messages.error(request, "Укажите причину отказа.")
+            return redirect(request.get_full_path())
+        updated = queryset.filter(status=Receipt.Status.PENDING).update(
+            status=Receipt.Status.REJECTED, rejection_reason=reason
+        )
+        messages.success(request, f"Отклонено чеков: {updated}.")
+        return redirect(request.get_full_path())
+
+    return TemplateResponse(
+        request,
+        "admin/receipts/receipt/reject_reason.html",
+        {"receipts": queryset.select_related("user"), "action": "reject_selected"},
+    )
 
 
 @admin.action(description="Выгрузить принятые чеки в CSV")
@@ -81,7 +114,9 @@ class ReceiptAdmin(admin.ModelAdmin):
     search_fields = ("fn", "fd", "fp", "user__username", "user__email")
     list_select_related = ("user",)
     readonly_fields = ("created_at", "photo_preview")
-    actions = [export_accepted_csv]
+    actions = [accept_selected, reject_selected, export_accepted_csv]
+    actions_on_top = True
+    actions_on_bottom = True
     fieldsets = (
         (None, {"fields": ("user", "fn", "fd", "fp", "purchased_at", "amount")}),
         ("Проверка", {"fields": ("status", "rejection_reason")}),

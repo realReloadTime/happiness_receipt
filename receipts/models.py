@@ -72,6 +72,11 @@ class Receipt(models.Model):
                 name="unique_active_receipt",
             )
         ]
+        indexes = [
+            # Кабинет и админка постоянно выбирают чеки по пользователю,
+            # отсортированные по дате регистрации (от новых к старым).
+            models.Index(fields=["user", "-created_at"], name="receipt_user_created_idx"),
+        ]
 
     def __str__(self):
         return f"Чек {self.fn}/{self.fd}/{self.fp} — {self.get_status_display()}"
