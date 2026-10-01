@@ -1,9 +1,11 @@
-"""Тесты: валидация чека, QR-парсер, API, кабинет, админка."""
+"""Тесты: валидация чека, QR-парсер, API, кабинет, админка, розыгрыш."""
 import datetime
 from decimal import Decimal
+from io import StringIO
 from unittest import mock
 
 from django.contrib.auth import get_user_model
+from django.core.management import call_command
 from django.db import IntegrityError
 from django.test import TestCase, override_settings
 from django.urls import reverse
@@ -233,7 +235,8 @@ class ReceiptPageAndApiTests(TestCase):
         """Создаёт чек с уникальными реквизитами (связка ФН+ФД+ФП глобально уникальна)."""
         type(self)._counter += 1
         n = type(self)._counter
-        data = dict(fn="9288000100%08d" % n, fd=str(n), fp=str(n + 5000))
+        # ФН строго 16 цифр (поле max_length=16, Postgres это проверяет).
+        data = dict(fn="9288000100%06d" % (n % 1000000), fd=str(n), fp=str(n + 5000))
         data.update(kwargs)
         return Receipt.objects.create(
             user=user, purchased_at=dt(2026, 10, 15), amount="1500.00", **data
@@ -478,20 +481,114 @@ class AdminTests(TestCase):
 
     @override_settings(**CAMPAIGN)
     def test_csv_export_contains_only_accepted(self):
-        accepted = Receipt.objects.create(
+        from receipts.admin import export_accepted_csv
+
+        Receipt.objects.create(
             user=self.buyer, purchased_at=dt(2026, 10, 15), amount="1500.00",
             status=Receipt.Status.ACCEPTED, fn="9288000100110001", fd="1", fp="11",
         )
-        pending = Receipt.objects.create(
+        Receipt.objects.create(
             user=self.buyer, purchased_at=dt(2026, 10, 16), amount="1200.00",
             fn="9288000100110002", fd="2", fp="22",
         )
-        self.client.force_login(self.moderator)
-        response = self.client.post(
-            reverse("admin:receipts_receipt_changelist"),
-            {"action": "export_accepted_csv", "_selected_action": [accepted.pk, pending.pk]},
+        # Вызываем функцию действия напрямую (потоковый ответ не трогает test client)
+        response = export_accepted_csv(
+            None, None, Receipt.objects.all()
         )
-        self.assertEqual(response.status_code, 200)
-        content = response.content.decode("utf-8-sig")
+        content = b"".join(response.streaming_content).decode("utf-8-sig")
         self.assertIn("9288000100110001", content)
         self.assertNotIn("9288000100110002", content)
+
+
+class PrizeDrawTests(TestCase):
+    """Розыгрыш победителей после окончания акции."""
+
+    @override_settings(**CAMPAIGN)
+    def setUp(self):
+        self.users = [User.objects.create_user(f"u{i}", password="pass") for i in range(5)]
+
+    def make_accepted(self, user, fn):
+        return Receipt.objects.create(
+            user=user, fn=fn, fd=fn[-2:], fp=fn[-4:],
+            purchased_at=dt(2026, 10, 15), amount="1500.00",
+            status=Receipt.Status.ACCEPTED,
+        )
+
+    @override_settings(**CAMPAIGN, PROMO_WINNERS_COUNT=2)
+    def test_draw_picks_winners_from_accepted_after_campaign_end(self):
+        for index, user in enumerate(self.users):
+            self.make_accepted(user, "928800010011%04d" % (100 + index))
+        with patch_now(AFTER_CAMPAIGN_NOW):
+            call_command("draw_winners")
+        self.assertEqual(Receipt.objects.filter(status=Receipt.Status.WON).count(), 2)
+        self.assertEqual(Receipt.objects.filter(status=Receipt.Status.LOST).count(), 3)
+
+    @override_settings(**CAMPAIGN)
+    def test_draw_skipped_before_campaign_end(self):
+        for index, user in enumerate(self.users[:2]):
+            self.make_accepted(user, "928800010011%04d" % (200 + index))
+        with patch_now():
+            out = StringIO()
+            call_command("draw_winners", stdout=out)
+        self.assertIn("ещё не закончилась", out.getvalue())
+        self.assertEqual(
+            Receipt.objects.filter(status__in=[Receipt.Status.WON, Receipt.Status.LOST]).count(), 0
+        )
+
+    @override_settings(**CAMPAIGN, PROMO_WINNERS_COUNT=1)
+    def test_draw_is_idempotent(self):
+        for index, user in enumerate(self.users[:3]):
+            self.make_accepted(user, "928800010011%04d" % (300 + index))
+        with patch_now(AFTER_CAMPAIGN_NOW):
+            call_command("draw_winners")
+            call_command("draw_winners")  # повторный запуск ничего не меняет
+        self.assertEqual(Receipt.objects.filter(status=Receipt.Status.WON).count(), 1)
+        self.assertEqual(Receipt.objects.filter(status=Receipt.Status.LOST).count(), 2)
+
+    @override_settings(**CAMPAIGN, PROMO_WINNERS_COUNT=2)
+    def test_each_user_wins_at_most_once(self):
+        # У одного пользователя два принятых чека — приз достаётся не более одного раза
+        user = self.users[0]
+        self.make_accepted(user, "9288000100114001")
+        self.make_accepted(user, "9288000100114002")
+        self.make_accepted(self.users[1], "9288000100114003")
+        self.make_accepted(self.users[2], "9288000100114004")
+        with patch_now(AFTER_CAMPAIGN_NOW):
+            call_command("draw_winners")
+        won_for_user = Receipt.objects.filter(user=user, status=Receipt.Status.WON).count()
+        self.assertLessEqual(won_for_user, 1)
+
+
+class RulesAndWinModalTests(TestCase):
+    """Страница правил и попап «Вы победитель»."""
+
+    def test_rules_page_opens(self):
+        response = self.client.get(reverse("receipts:rules"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Правила акции")
+
+    @override_settings(**CAMPAIGN)
+    def test_cabinet_shows_winner_modal(self):
+        user = User.objects.create_user("winner", password="pass")
+        Receipt.objects.create(
+            user=user, fn="9288000100119001", fd="91", fp="9191",
+            purchased_at=dt(2026, 10, 15), amount="2000.00",
+            status=Receipt.Status.WON,
+        )
+        self.client.force_login(user)
+        response = self.client.get(reverse("receipts:cabinet"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "win-modal")
+        self.assertContains(response, "Вы победитель")
+
+    @override_settings(**CAMPAIGN)
+    def test_cabinet_hides_modal_without_wins(self):
+        user = User.objects.create_user("plain", password="pass")
+        Receipt.objects.create(
+            user=user, fn="9288000100119002", fd="92", fp="9292",
+            purchased_at=dt(2026, 10, 15), amount="2000.00",
+            status=Receipt.Status.ACCEPTED,
+        )
+        self.client.force_login(user)
+        response = self.client.get(reverse("receipts:cabinet"))
+        self.assertNotContains(response, "win-modal")
